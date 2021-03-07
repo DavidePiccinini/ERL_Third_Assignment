@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 	
-	  <!-- these are the arguments you can pass this launch file, for example paused:=true -->
+	<!-- Gazebo parameters -->
   <arg name="paused" default="false"/>
   <arg name="use_sim_time" default="true"/>
   <arg name="extra_gazebo_args" default=""/>
@@ -12,15 +12,15 @@
   <arg name="debug" default="false"/>
   <arg name="physics" default="ode"/>
   <arg name="verbose" default="false"/>
-  <arg name="world_name" value="$(find exp_assignment3)/worlds/$(arg world).world"/>
+  <arg name="world_name" value="$(find erl_third_assignment)/worlds/$(arg world).world"/>
   <arg name="respawn_gazebo" default="false"/>
   <arg name="use_clock_frequency" default="false"/>
   <arg name="pub_clock_frequency" default="100"/>
 
-  <!-- set use_sim_time flag -->
+  <!-- Set use_sim_time flag -->
   <param name="/use_sim_time" value="$(arg use_sim_time)"/>
 
-  <!-- set command arguments -->
+  <!-- Set command arguments -->
   <arg unless="$(arg paused)" name="command_arg1" value=""/>
   <arg     if="$(arg paused)" name="command_arg1" value="-u"/>
   <arg unless="$(arg recording)" name="command_arg2" value=""/>
@@ -30,21 +30,27 @@
   <arg unless="$(arg debug)" name="script_type" value="gzserver"/>
   <arg     if="$(arg debug)" name="script_type" value="debug"/>
 
-  <!-- start gazebo server-->
+  <!-- Start gazebo server-->
   <group if="$(arg use_clock_frequency)">
     <param name="gazebo/pub_clock_frequency" value="$(arg pub_clock_frequency)" />
   </group>
   <node name="gazebo" pkg="gazebo_ros" type="$(arg script_type)" respawn="$(arg respawn_gazebo)" output="screen"
 	args="$(arg command_arg1) $(arg command_arg2) $(arg command_arg3) -e $(arg physics) $(arg extra_gazebo_args) $(arg world_name)" />
 	
-  <!-- start gazebo client -->
+  <!-- Start gazebo client -->
   <group if="$(arg gui)">
     <node name="gazebo_gui" pkg="gazebo_ros" type="gzclient" respawn="false" output="screen"/>
   </group>
   
-   <param name="human_description1" textfile="$(find exp_assignment3)/urdf/human.urdf" />
-      
-  <node name="urdf_spawner_human1" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-        args="-urdf -model human1 -param human_description1 -x -6 -y 8.5 -z 0.34 -R 0 -P 0 -Y -0.75"/>
+
+  <!-- Spawn the human model -->
+  <param name="human_description" textfile="$(find erl_third_assignment)/urdf/human.urdf" />
+  <node name="urdf_spawner_human" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+  args="-urdf -model human -param human_description -x -6 -y 8.5 -z 0.34 -R 0 -P 0 -Y -0.75"/>
+
+  <!-- Spawn the robot model -->
+  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find erl_third_assignment)/urdf/robot_laser_camera.xacro"/>
+  <node name="urdf_spawner_robot" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+	args="-urdf -model robot -param robot_description -x -5 -y 8 -Y -1.57 -z 0.05"/>
 
 </launch>
