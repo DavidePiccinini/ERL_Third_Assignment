@@ -44,13 +44,21 @@
   
 
   <!-- Spawn the human model -->
-  <param name="human_description" textfile="$(find erl_third_assignment)/urdf/human.urdf" />
-  <node name="urdf_spawner_human" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-  args="-urdf -model human -param human_description -x -6 -y 8.5 -z 0.34 -R 0 -P 0 -Y -0.75"/>
+  <arg name="ns1" value="human"/>
+  <param name="$(arg ns1)/human_description" textfile="$(find erl_third_assignment)/urdf/human.urdf" />
+  <group ns="$(arg ns1)">
+    <node name="urdf_spawner_human" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+    args="-urdf -model $(arg ns1) -param human_description -x -6 -y 8.5 -z 0.34 -R 0 -P 0 -Y -0.75"/>
+
+    <node name="human_controller" pkg="erl_third_assignment" type="human.py" respawn="true" output="screen"/>
+  </group>
 
   <!-- Spawn the robot model -->
-  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find erl_third_assignment)/urdf/robot_laser_camera.xacro"/>
-  <node name="urdf_spawner_robot" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-	args="-urdf -model robot -param robot_description -x -5 -y 8 -Y -1.57 -z 0.05"/>
+  <arg name="ns2" value="robot"/>
+  <param name="$(arg ns2)/robot_description" command="$(find xacro)/xacro --inorder $(find erl_third_assignment)/urdf/robot_laser_camera.xacro"/>
+  <group ns="$(arg ns2)">
+    <node name="urdf_spawner_robot" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+	  args="-urdf -model $(arg ns2) -param robot_description -x -5 -y 8 -Y -1.57 -z 0.05"/>
+  </group>
 
 </launch>

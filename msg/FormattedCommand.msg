@@ -1,0 +1,2 @@
+string mainCommand
+string parameter
