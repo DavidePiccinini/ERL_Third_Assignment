@@ -47,7 +47,7 @@ def sendGoToCommand():
     result = random.randint(1, 6)
 
     # Create the string to send
-    command.data = "GoTo: " + locations.get(result, "Error in human.py")
+    command.data = "GoTo: " + locations.get(result, "Error in human.py.")
 
     # Print a feedback message
     print("\nPerson: sending a '%s' command to the robot.\n" %command.data)
@@ -80,7 +80,7 @@ if __name__ == "__main__":
         # Initialize the command publisher
         comPub = rospy.Publisher("command", String, queue_size=1)
 
-        # Wait for some time before sending commands (to setup the complete system)
+        # Wait for some time before sending commands (to setup the system)
         time.sleep(20)
 
         human()

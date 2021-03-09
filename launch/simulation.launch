@@ -1,4 +1,5 @@
 <?xml version="1.0"?>
+
 <launch>
 	
 	<!-- Gazebo parameters -->
@@ -60,5 +61,8 @@
     <node name="urdf_spawner_robot" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
 	  args="-urdf -model $(arg ns2) -param robot_description -x -5 -y 8 -Y -1.57 -z 0.05"/>
   </group>
+
+  <!-- Run the node associated to the sensor -->
+  <node name="sensor_controller" pkg="erl_third_assignment" type="sensor.py" respawn="true" output="screen"/>
 
 </launch>
