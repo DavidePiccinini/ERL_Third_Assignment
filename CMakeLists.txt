@@ -17,6 +17,8 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib_msgs
   roscpp
   rospy
+  tf
+  openslam_gmapping
 )
 
 ## System dependencies are found with CMake's conventions
@@ -110,7 +112,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES erl_third_assignment
-  CATKIN_DEPENDS message_runtime roscpp rospy std_msgs cv_bridge geometry_msgs nav_msgs sensor_msgs actionlib_msgs
+  CATKIN_DEPENDS message_runtime roscpp rospy std_msgs cv_bridge geometry_msgs nav_msgs sensor_msgs actionlib_msgs tf openslam_gmapping
 #  DEPENDS system_lib
   DEPENDS OpenCV
 )

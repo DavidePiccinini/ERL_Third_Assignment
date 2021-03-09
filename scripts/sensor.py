@@ -72,7 +72,7 @@ if __name__ == "__main__":
         rospy.init_node('sensor')
 
         # Initialize the command subscriber
-        comSub = rospy.Subscriber("human/command", String, formatCommand, queue_size=1)
+        comSub = rospy.Subscriber("command", String, formatCommand, queue_size=1)
 
         # Initialize the formatted command publisher
         formComPub = rospy.Publisher("sensor/formatted_command", FormattedCommand, queue_size=1)

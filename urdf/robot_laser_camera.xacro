@@ -123,7 +123,7 @@
 	    <geometry>
 		    <box size="0.025 0.025 0.025"/>
 	    </geometry>
-	    <material name="red">
+	    <material name="orange">
 		    <color rgba="1 0 0 1"/>
 	    </material>
 	  </visual>
@@ -146,7 +146,7 @@
 	    <geometry>
 		    <box size="0.05 0.05 0.06"/>
 	    </geometry>
-	    <material name="red">
+	    <material name="blue">
 		    <color rgba="1 0 0 1"/>
 	    </material>
 	  </visual>
@@ -169,7 +169,7 @@
 	      <geometry>
 		      <box size="0.025 0.025 0.025"/>
 	      </geometry>
-	      <material name="red">
+	      <material name="grey">
 		      <color rgba="1 0 0 1"/>
 	      </material>
 	    </visual>
@@ -201,7 +201,6 @@
   </joint>
   
   <joint name="hokuyo_joint" type="fixed">
-	  <axis xyz="0 1 0" />
 	  <origin xyz="0.12 0 0.0125" rpy="0 0 0"/>
 	  <parent link="link_chassis"/>
 	  <child link="hokuyo_link"/> 
@@ -215,7 +214,6 @@
 	 </joint>
 
    <joint name="camera_joint" type="fixed">
-	  <axis xyz="0 1 0" />
 	  <origin xyz="0.02 0 0.055" rpy="0 0 0"/>
 	  <parent link="camera_support_link"/>
 	  <child link="camera_link"/> 
