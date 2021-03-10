@@ -33,7 +33,7 @@ def formatCommand(ros_data):
     }
 
     # Establish which function to use
-    formatting = possibleCommands.get(temp[0], "Error in sensor.py.")
+    formatting = possibleCommands.get(temp[0], "\nError in sensor.py.\n")
 
     # Call the appropriate function
     formatting(temp)

@@ -47,7 +47,7 @@ def sendGoToCommand():
     result = random.randint(1, 6)
 
     # Create the string to send
-    command.data = "GoTo: " + locations.get(result, "Error in human.py.")
+    command.data = "GoTo: " + locations.get(result, "\nError in human.py.\n")
 
     # Print a feedback message
     print("\nPerson: sending a '%s' command to the robot.\n" %command.data)
