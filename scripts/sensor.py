@@ -7,17 +7,23 @@
 import rospy
 import time
 import random
+import os
+import fcntl
 from std_msgs.msg import String
 from erl_third_assignment.msg import FormattedCommand
 
-# Publisher
+## Publisher
 formComPub = None
 
-# Subscriber
+## Subscriber
 comSub = None
 
-# Formatted command
+## Formatted command
 formCommand = FormattedCommand()
+
+## Log file
+logfile = None
+
 
 ##
 # Understands the command told by the user and format it to send it to the robot.
@@ -38,29 +44,41 @@ def formatCommand(ros_data):
     # Call the appropriate function
     formatting(temp)
 
+
 ##
 # Formats a "Play" command.
 # @param command The string list containing the command.
 def formatPlay(command):
+    global logfile 
+    global formCommand
+
     # Create the formatted "Play" command
     formCommand.mainCommand = command[0]
 
     # Print a feedback message
-    print("\nSensor: sending a 'Play' formatted command.\n")
+    fcntl.flock(logfile, fcntl.LOCK_EX)
+    logfile.write("\nSensor: sending a 'Play' formatted command.\n")
+    fcntl.flock(logfile, fcntl.LOCK_UN)
 
     # Publish it
     formComPub.publish(formCommand)
+
 
 ##
 # Formats a "GoTo" command.
 # @param command The string list containing the command.
 def formatGoTo(command):
+    global logfile 
+    global formCommand
+
     # Create the formatted "GoTo" command
     formCommand.mainCommand = command[0]
     formCommand.parameter = command[1]
 
     # Print a feedback message
-    print("\nSensor: sending a 'GoTo' formatted command.\n")
+    fcntl.flock(logfile, fcntl.LOCK_EX)
+    logfile.write("\nSensor: sending a 'GoTo: %s' formatted command.\n" %formCommand.parameter)
+    fcntl.flock(logfile, fcntl.LOCK_UN)
 
     # Publish it
     formComPub.publish(formCommand)
@@ -71,6 +89,14 @@ if __name__ == "__main__":
         # Initialize the node
         rospy.init_node('sensor')
 
+        # Open the log file to write on it
+        script_path = os.path.abspath(__file__) 
+        path_list = script_path.split(os.sep)
+        script_directory = path_list[0:len(path_list)-2]
+        file_path = "log/logfile.txt"
+        path = "/".join(script_directory) + "/" + file_path
+        logfile = open(path, 'a')
+
         # Initialize the command subscriber
         comSub = rospy.Subscriber("command", String, formatCommand, queue_size=1)
 
@@ -78,7 +104,7 @@ if __name__ == "__main__":
         formComPub = rospy.Publisher("sensor/formatted_command", FormattedCommand, queue_size=1)
 
         # Wait for some time (to setup the system)
-        time.sleep(20)
+        time.sleep(5)
 
         while not rospy.is_shutdown():
             # Keep from exiting until the node is stopped

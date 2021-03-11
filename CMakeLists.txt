@@ -170,6 +170,7 @@ include_directories(
 catkin_install_python(PROGRAMS
   scripts/human.py
   scripts/sensor.py
+  scripts/state_machine.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

@@ -22,7 +22,7 @@ from geometry_msgs.msg import PoseStamped, Twist
 from std_msgs.msg import String, Float64
 from sensor_msgs.msg import CompressedImage
 from nav_msgs.msg import Odometry
-from move_base_msgs.msg import MoveBaseGoal
+from move_base_msgs.msg import MoveBaseAction
 from erl_third_assignment.msg import FormattedCommand
 
 ## Action client
@@ -37,7 +37,7 @@ odomSub = None
 commandSub = None
 
 ## Goal pose
-mbGoal = MoveBaseGoal()
+mbGoal = MoveBaseAction()
 
 ## Counter
 sleepCounter = 0
@@ -260,8 +260,8 @@ def sendGoalNormalState():
     y = random.randint(0, 7)
 
     # Create the goal
-    mbGoal.target_pose.pose.position.x = x
-    mbGoal.target_pose.pose.position.y = y
+    mbGoal.action_goal.goal.target_pose.pose.position.x = x
+    mbGoal.action_goal.goal.target_pose.pose.position.y = y
 
     print("NORMAL state: the robot is moving to position [%d, %d].\n" %(x, y))
 
@@ -362,8 +362,8 @@ class Sleep(smach.State):
         x = -5
         y = 8
 
-        mbGoal.target_pose.pose.position.x = x
-        mbGoal.target_pose.pose.position.y = y
+        mbGoal.action_goal.goal.target_pose.pose.position.x = x
+        mbGoal.action_goal.goal.target_pose.pose.position.y = y
 
         # Send the goal
         movebaseClient.send_goal(mbGoal)
@@ -483,8 +483,10 @@ def main():
     global movebaseClient
     global velPub
 
+    print("State machine says hello")
+
     # Create the action client and wait for the server
-    movebaseClient = actionlib.SimpleActionClient("move_base", MoveBaseGoal)
+    movebaseClient = actionlib.SimpleActionClient("move_base", MoveBaseAction)
     movebaseClient.wait_for_server()
 
     # Initialize the publishers
@@ -506,6 +508,7 @@ def main():
         smach.StateMachine.add('PLAY', Play(),
                                 transitions={'stopplaying': 'NORMAL',
                                              'find': 'FIND'})
+        
         smach.StateMachine.add('FIND', Find(),
                                 transitions={'stopsearching': 'PLAY'})                                     
 

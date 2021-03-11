@@ -1,0 +1,8 @@
+
+Sensor: sending a 'Play' formatted command.
+
+Sensor: sending a 'GoTo: Bedroom' formatted command.
+
+Person: sending a 'Play' command to the robot.
+
+Person: sending a 'GoTo: Bedroom' command to the robot.
