@@ -8,7 +8,6 @@ import rospy
 import time
 import random
 import os
-import fcntl
 from std_msgs.msg import String
 from erl_third_assignment.msg import FormattedCommand
 
@@ -54,11 +53,12 @@ def formatPlay(command):
 
     # Create the formatted "Play" command
     formCommand.mainCommand = command[0]
+    formCommand.parameter = ""
 
     # Print a feedback message
-    fcntl.flock(logfile, fcntl.LOCK_EX)
     logfile.write("\nSensor: sending a 'Play' formatted command.\n")
-    fcntl.flock(logfile, fcntl.LOCK_UN)
+    logfile.flush()
+    os.fsync(logfile)
 
     # Publish it
     formComPub.publish(formCommand)
@@ -76,9 +76,9 @@ def formatGoTo(command):
     formCommand.parameter = command[1]
 
     # Print a feedback message
-    fcntl.flock(logfile, fcntl.LOCK_EX)
     logfile.write("\nSensor: sending a 'GoTo: %s' formatted command.\n" %formCommand.parameter)
-    fcntl.flock(logfile, fcntl.LOCK_UN)
+    logfile.flush()
+    os.fsync(logfile)
 
     # Publish it
     formComPub.publish(formCommand)

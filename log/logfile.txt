@@ -1,8 +1,64 @@
 
-Sensor: sending a 'Play' formatted command.
+State machine: Trying to connect to the move_base server.
 
-Sensor: sending a 'GoTo: Bedroom' formatted command.
+Person: sending a 'GoTo: Closet' command to the robot.
+
+Sensor: sending a 'GoTo: Closet' formatted command.
 
 Person: sending a 'Play' command to the robot.
 
+Sensor: sending a 'Play' formatted command.
+
+State machine: Connected to the move base server.
+
+State machine: Executing state NORMAL.
+
+NORMAL state: the robot is moving to position [-4, 7].
+
+NORMAL state: the action server returned result 4.
+
+NORMAL state: the robot is moving to position [-4, 7].
+
+NORMAL state: the action server returned result 4.
+
+NORMAL state: the robot is moving to position [-4, 7].
+
+NORMAL state: the action server returned result 4.
+
+NORMAL state: The robot is sleepy.
+
+State machine: Executing state SLEEP.
+
+SLEEP state: the action server returned result 4.
+
 Person: sending a 'GoTo: Bedroom' command to the robot.
+
+Sensor: sending a 'GoTo: Bedroom' formatted command.
+
+SLEEP state: The robot woke up.
+
+State machine: Executing state NORMAL.
+
+NORMAL state: the robot is moving to position [-4, 7].
+
+NORMAL state: the action server returned result 4.
+
+NORMAL state: the robot is moving to position [-4, 7].
+
+NORMAL state: the action server returned result 4.
+
+NORMAL state: the robot is moving to position [-4, 7].
+
+NORMAL state: the action server returned result 4.
+
+NORMAL state: The robot is sleepy.
+
+State machine: Executing state SLEEP.
+
+SLEEP state: the action server returned result 4.
+
+Person: sending a 'Play' command to the robot.
+
+Sensor: sending a 'Play' formatted command.
+
+SLEEP state: The robot woke up.

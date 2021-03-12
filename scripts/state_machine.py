@@ -15,14 +15,15 @@ import cv2
 import imutils
 import math
 import threading
+import os
 import numpy as np
 from scipy.ndimage import filters
 from actionlib_msgs.msg import GoalStatus
-from geometry_msgs.msg import PoseStamped, Twist
+from geometry_msgs.msg import PoseStamped, Twist, PoseWithCovarianceStamped
 from std_msgs.msg import String, Float64
 from sensor_msgs.msg import CompressedImage
 from nav_msgs.msg import Odometry
-from move_base_msgs.msg import MoveBaseAction
+from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from erl_third_assignment.msg import FormattedCommand
 
 ## Action client
@@ -30,6 +31,7 @@ movebaseClient = None
 
 ## Publishers
 velPub = None
+initPosPub = None
 
 ## Subscriber
 imageSub = None
@@ -37,7 +39,7 @@ odomSub = None
 commandSub = None
 
 ## Goal pose
-mbGoal = MoveBaseAction()
+mbGoal = MoveBaseGoal()
 
 ## Counter
 sleepCounter = 0
@@ -74,6 +76,10 @@ detectedLocations = []
 ## Current robot position
 robotPosition_x = None
 robotPosition_y = None
+
+## Log file
+logfile = None
+
 
 ##
 #
@@ -234,6 +240,11 @@ def receivedCommand(ros_data):
     global receivedPlay
     global receivedGoTo
     global parameter
+    global logfile
+
+    logfile.write("\nState machine: Received a formatted command.\n")
+    logfile.flush()
+    os.fsync(logfile)
 
     # Retrieve the command
     if ros_data.mainCommand == "Play":
@@ -244,7 +255,9 @@ def receivedCommand(ros_data):
         receivedPlay = False
         parameter = ros_data.parameter
     else:
-        print("\nUnknown command received: error in state_machine.py.\n")
+        logfile.write("\nUnknown command received: error in state_machine.py.\n")
+        logfile.flush()
+        os.fsync(logfile)
 
 
 ##
@@ -253,23 +266,33 @@ def sendGoalNormalState():
     global movebaseClient
     global mbGoal
     global finishedMoving
+    global logfile
 
     # Get a random location on the plane 
     # FIXME (check the dimension of the map)
-    x = random.randint(-7, 0)
-    y = random.randint(0, 7)
+    # x = random.randint(-6, 6)
+    # y = random.randint(-8, 8)
+
+    x = -4
+    y = 7
 
     # Create the goal
-    mbGoal.action_goal.goal.target_pose.pose.position.x = x
-    mbGoal.action_goal.goal.target_pose.pose.position.y = y
+    mbGoal.target_pose.pose.position.x = x
+    mbGoal.target_pose.pose.position.y = y
 
-    print("NORMAL state: the robot is moving to position [%d, %d].\n" %(x, y))
+    logfile.write("\nNORMAL state: the robot is moving to position [%d, %d].\n" %(x, y))
+    logfile.flush()
+    os.fsync(logfile)
 
     # Send the goal
     movebaseClient.send_goal(mbGoal)
 
     # Wait for the result
     movebaseClient.wait_for_result()
+
+    logfile.write("\nNORMAL state: the action server returned result %s.\n" %str(movebaseClient.get_state()))
+    logfile.flush()
+    os.fsync(logfile)
 
     # Set the flag
     finishedMoving.set()
@@ -287,17 +310,18 @@ class Normal(smach.State):
         self.sleepThreshold = 3
 
     def execute(self, userdata):
-        print('State machine: Executing state NORMAL.\n')
-
         global sleepCounter
         global ballFound
         global movebaseClient
-        global imageSub
-        global commandSub
-        global odomSub
+        global imageSub, commandSub, odomSub
         global mbGoal
-        global finishedMoving
-        global finishedGettingClose
+        global receivedPlay
+        global finishedMoving, finishedGettingClose
+        global logfile
+
+        logfile.write('\nState machine: Executing state NORMAL.\n')
+        logfile.flush()
+        os.fsync(logfile)
 
         # Subscribe to the image topic to check if the robot sees the ball
         imageSub = rospy.Subscriber("camera1/image_raw/compressed", CompressedImage, checkForBall, queue_size=1)
@@ -306,7 +330,7 @@ class Normal(smach.State):
         commandSub = rospy.Subscriber("sensor/formatted_command", FormattedCommand, receivedCommand, queue_size=1)
 
         # Subscribe to the odometry topic to update the current robot position
-        odomSub = rospy.Subscriber("odom", Odometry, updateRobotPosition, queue_size=1)
+        odomSub = rospy.Subscriber("odom", Odometry, updateRobotPosition)
 
         while sleepCounter < self.sleepThreshold:
             # If the user told a "Play" command, switch to the PLAY state
@@ -318,7 +342,10 @@ class Normal(smach.State):
 
                 receivedPlay = False
 
-                print('NORMAL state: The robot wants to play.\n')
+                logfile.write('\nNORMAL state: The robot wants to play.\n')
+                logfile.flush()
+                os.fsync(logfile)
+
                 return 'play'
 
             # Start the thread to move the robot
@@ -341,7 +368,10 @@ class Normal(smach.State):
         odomSub.unregister()
 
         # Go into the SLEEP state
-        print('NORMAL state: The robot is sleepy.\n')
+        logfile.write('\nNORMAL state: The robot is sleepy.\n')
+        logfile.flush()
+        os.fsync(logfile)
+
         return 'sleep'
 
 
@@ -352,18 +382,22 @@ class Sleep(smach.State):
         smach.State.__init__(self, outcomes=['wakeup'])
 
     def execute(self, userdata):
-        print('State machine: Executing state SLEEP.\n')
-
         global sleepCounter
         global movebaseClient
         global mbGoal
+        global logfile
+
+        logfile.write('\nState machine: Executing state SLEEP.\n')
+        logfile.flush()
+        os.fsync(logfile)
 
         # Get the home location on the plane
         x = -5
         y = 8
 
-        mbGoal.action_goal.goal.target_pose.pose.position.x = x
-        mbGoal.action_goal.goal.target_pose.pose.position.y = y
+        # Create the goal
+        mbGoal.target_pose.pose.position.x = x
+        mbGoal.target_pose.pose.position.y = y
 
         # Send the goal
         movebaseClient.send_goal(mbGoal)
@@ -371,7 +405,9 @@ class Sleep(smach.State):
         # Wait until the robot has reached the destination
         movebaseClient.wait_for_result()
 
-        print('SLEEP state: The robot has arrived home.\n')
+        logfile.write("\nSLEEP state: the action server returned result %s.\n" %str(movebaseClient.get_state()))
+        logfile.flush()
+        os.fsync(logfile)
 
         # Sleep for a random amount of seconds
         #time.sleep(random.randint(10, 15))
@@ -379,7 +415,10 @@ class Sleep(smach.State):
 
         # Go back to the NORMAL state
         sleepCounter = 0
-        print("SLEEP state: The robot woke up.\n")
+        logfile.write("\nSLEEP state: The robot woke up.\n")
+        logfile.flush()
+        os.fsync(logfile)
+
         return 'wakeup'
 
 
@@ -390,7 +429,11 @@ class Play(smach.State):
         smach.State.__init__(self, outcomes=['stopplaying', 'find'])
 
     def execute(self, userdata):
-        print('State machine: Executing state PLAY.\n')
+        global logfile
+
+        logfile.write('\nState machine: Executing state PLAY.\n')
+        logfile.flush()
+        os.fsync(logfile)
 
         # global sleepCounter
         # global ballFound
@@ -470,27 +513,51 @@ class Find(smach.State):
         smach.State.__init__(self, outcomes=['stopsearching'])
 
     def execute(self, userdata):
-        print('State machine: Executing state FIND.\n')
+        global logfile
+
+        logfile.write('\nState machine: Executing state FIND.\n')
+        logfile.flush()
+        os.fsync(logfile)
 
         return 'stopsearching'
 
 
 ##
 # State machine initialization
-def main():
+if __name__ == "__main__":
     rospy.init_node('robot_behaviour', anonymous=True)
 
-    global movebaseClient
-    global velPub
+    # Open the log file to write on it
+    script_path = os.path.abspath(__file__) 
+    path_list = script_path.split(os.sep)
+    script_directory = path_list[0:len(path_list)-2]
+    file_path = "log/logfile.txt"
+    path = "/".join(script_directory) + "/" + file_path
+    logfile = open(path, 'a')
 
-    print("State machine says hello")
+    logfile.write("\nState machine: Trying to connect to the move_base server.\n")
+    logfile.flush()
+    os.fsync(logfile)
 
     # Create the action client and wait for the server
-    movebaseClient = actionlib.SimpleActionClient("move_base", MoveBaseAction)
+    movebaseClient = actionlib.SimpleActionClient("/move_base", MoveBaseAction)
     movebaseClient.wait_for_server()
+
+    logfile.write("\nState machine: Connected to the move base server.\n")
+    logfile.flush()
+    os.fsync(logfile)
 
     # Initialize the publishers
     velPub = rospy.Publisher("cmd_vel", Twist, queue_size=1)
+    initPosPub = rospy.Publisher("initialpose", PoseWithCovarianceStamped, queue_size=1)
+
+    # Publish the initial position
+    initialPos = PoseWithCovarianceStamped()
+    initialPos.pose.pose.position.x = -5
+    initialPos.pose.pose.position.y = 8
+    initialPos.pose.covariance = [0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.06853892326654787]
+
+    initPosPub.publish(initialPos)
 
     # Create a SMACH state machine
     sm = smach.StateMachine(outcomes=[])
@@ -522,7 +589,3 @@ def main():
     # Wait for ctrl-c to stop the application
     rospy.spin()
     sis.stop()
-
-
-if __name__ == "__main__":
-    main()

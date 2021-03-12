@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   actionlib_msgs
+  actionlib
   roscpp
   rospy
   tf
@@ -78,6 +79,7 @@ add_message_files(
 generate_messages(
   DEPENDENCIES
   std_msgs
+  actionlib_msgs
 )
 
 ################################################
@@ -112,7 +114,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES erl_third_assignment
-  CATKIN_DEPENDS message_runtime roscpp rospy std_msgs cv_bridge geometry_msgs nav_msgs sensor_msgs actionlib_msgs tf openslam_gmapping
+  CATKIN_DEPENDS message_runtime roscpp rospy std_msgs cv_bridge geometry_msgs nav_msgs sensor_msgs actionlib_msgs actionlib tf openslam_gmapping
 #  DEPENDS system_lib
   DEPENDS OpenCV
 )
@@ -167,7 +169,7 @@ include_directories(
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
-catkin_install_python(PROGRAMS
+install(PROGRAMS
   scripts/human.py
   scripts/sensor.py
   scripts/state_machine.py

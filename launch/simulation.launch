@@ -36,7 +36,7 @@
     <param name="gazebo/pub_clock_frequency" value="$(arg pub_clock_frequency)" />
   </group>
   <node name="gazebo" pkg="gazebo_ros" type="$(arg script_type)" respawn="$(arg respawn_gazebo)" output="screen"
-	args="$(arg command_arg1) $(arg command_arg2) $(arg command_arg3) -e $(arg physics) $(arg extra_gazebo_args) $(arg world_name)" />
+	  args="$(arg command_arg1) $(arg command_arg2) $(arg command_arg3) -e $(arg physics) $(arg extra_gazebo_args) $(arg world_name)" />
 	
   <!-- Start gazebo client -->
   <group if="$(arg gui)">
@@ -50,6 +50,7 @@
     args="-urdf -model human -param human_description -x -6 -y 8.5 -z 0.34 -R 0 -P 0 -Y -0.75"/>
   <node name="human_controller" pkg="erl_third_assignment" type="human.py" respawn="true" output="screen"/>
 
+
   <!-- Spawn the robot model -->
   <param name="robot_description" command="$(find xacro)/xacro --inorder $(find erl_third_assignment)/urdf/robot_laser_camera.xacro"/>
   <node name="urdf_spawner_robot" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
@@ -57,10 +58,10 @@
 
 
   <!-- Start Rviz -->
-  <!-- <param name="use_gui" value="False"/>
+  <param name="use_gui" value="False"/>
   <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" /> 
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find erl_third_assignment)/config/sim.rviz" /> -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find erl_third_assignment)/config/sim.rviz" />
 
 
   <!-- Run the node associated to the sensor -->
@@ -68,7 +69,7 @@
 
 
   <!-- Run the state machine -->
-  <node name="state_machine" pkg="erl_third_assignment" type="state_machine.py" respawn="true" output="screen"/>
+  <node name="state_machine" pkg="erl_third_assignment" type="state_machine.py" required="true" output="log"/>
 
 
   <!-- Include other launch files -->

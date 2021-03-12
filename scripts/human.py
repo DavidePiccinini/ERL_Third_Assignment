@@ -8,7 +8,6 @@ import rospy
 import time
 import random
 import os
-import fcntl
 from std_msgs.msg import String
 
 ## Publisher
@@ -30,9 +29,9 @@ def sendPlayCommand():
     command.data = "Play"
 
     # Print a feedback message
-    fcntl.flock(logfile, fcntl.LOCK_EX)
     logfile.write("\nPerson: sending a '%s' command to the robot.\n" %command.data)
-    fcntl.flock(logfile, fcntl.LOCK_UN)
+    logfile.flush()
+    os.fsync(logfile)
 
     # Send the command
     comPub.publish(command)
@@ -63,9 +62,9 @@ def sendGoToCommand():
     command.data = "GoTo: " + locations.get(result, "\nError in human.py.\n")
 
     # Print a feedback message
-    fcntl.flock(logfile, fcntl.LOCK_EX)
     logfile.write("\nPerson: sending a '%s' command to the robot.\n" %command.data)
-    fcntl.flock(logfile, fcntl.LOCK_UN)
+    logfile.flush()
+    os.fsync(logfile)
 
     # Send the command
     comPub.publish(command)
