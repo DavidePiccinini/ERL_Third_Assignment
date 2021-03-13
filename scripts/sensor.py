@@ -56,7 +56,7 @@ def formatPlay(command):
     formCommand.parameter = ""
 
     # Print a feedback message
-    logfile.write("\nSensor: sending a 'Play' formatted command.\n")
+    logfile.write("\n[%f] Sensor: sending a 'Play' formatted command.\n" %time.time())
     logfile.flush()
     os.fsync(logfile)
 
@@ -76,7 +76,7 @@ def formatGoTo(command):
     formCommand.parameter = command[1]
 
     # Print a feedback message
-    logfile.write("\nSensor: sending a 'GoTo: %s' formatted command.\n" %formCommand.parameter)
+    logfile.write("\n[%f] Sensor: sending a 'GoTo: %s' formatted command.\n" %(time.time(), formCommand.parameter))
     logfile.flush()
     os.fsync(logfile)
 
@@ -93,9 +93,9 @@ if __name__ == "__main__":
         script_path = os.path.abspath(__file__) 
         path_list = script_path.split(os.sep)
         script_directory = path_list[0:len(path_list)-2]
-        file_path = "log/logfile.txt"
+        file_path = "log/sensor_logfile.txt"
         path = "/".join(script_directory) + "/" + file_path
-        logfile = open(path, 'a')
+        logfile = open(path, 'w')
 
         # Initialize the command subscriber
         comSub = rospy.Subscriber("command", String, formatCommand, queue_size=1)

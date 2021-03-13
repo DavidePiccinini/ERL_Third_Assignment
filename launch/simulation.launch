@@ -3,7 +3,7 @@
 <launch>
 	
 	<!-- Gazebo parameters -->
-  <arg name="paused" default="true"/>
+  <arg name="paused" default="false"/>
   <arg name="use_sim_time" default="true"/>
   <arg name="extra_gazebo_args" default=""/>
   <arg name="gui" default="true"/>
@@ -65,7 +65,7 @@
 
 
   <!-- Run the node associated to the sensor -->
-  <node name="sensor_controller" pkg="erl_third_assignment" type="sensor.py" respawn="true" output="screen"/>
+  <!-- <node name="sensor_controller" pkg="erl_third_assignment" type="sensor.py" respawn="true" output="screen"/> -->
 
 
   <!-- Run the state machine -->

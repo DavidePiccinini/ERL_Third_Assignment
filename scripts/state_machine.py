@@ -31,7 +31,6 @@ movebaseClient = None
 
 ## Publishers
 velPub = None
-initPosPub = None
 
 ## Subscriber
 imageSub = None
@@ -103,6 +102,7 @@ def checkForBall(ros_data):
     global detectedLocations
     global movebaseClient
     global velPub
+    global imageSub
     global blueLower, blueUpper, redLower, redUpper, greenLower, greenUpper, yellowLower, yellowUpper, magentaLower, magentaUpper, blackLower, blackUpper
     
     np_arr = np.frombuffer(ros_data.data, np.uint8)
@@ -117,10 +117,10 @@ def checkForBall(ros_data):
 
     for i in range(6):
         if len(cntsList[i]) > 0:
-            # The robot has seen the ball
+            # The robot has seen a ball
             ballFound = True
 
-            # Cancel the current move_base goal
+            # Cancel all move_base goals
             movebaseClient.cancel_goal()
 
             # Save the location name if it hasn't been found yet
@@ -133,25 +133,28 @@ def checkForBall(ros_data):
 
             if radius > 10:
                 vel = Twist()
-                vel.angular.z = 0.002*(center[0]-400)
-                vel.linear.x = -0.01*(radius-100)
+                vel.angular.z = -0.002*(center[0]-400)
+                vel.linear.x = -0.01*(radius-150)
 
                 # Saturation
-                if vel.linear.x > 0.6:
-                    vel.linear.x = 0.6
-                elif vel.linear.x < -0.6:
-                    vel.linear.x = -0.6
+                if vel.linear.x > 0.3:
+                    vel.linear.x = 0.3
+                elif vel.linear.x < -0.3:
+                    vel.linear.x = -0.3
 
                 if (abs(vel.linear.x) <= 0.1) and (abs(vel.angular.z) <= 0.1):
+                    imageSub.unregister()
+
                     # Save the location's position
                     saveLocationPosition(i)
 
                     # Turn the robot approximately 180 degrees 
                     # FIXME check if the robot turns appropriately
-                    for x in range(3):
-                        vel.angular.z = 0.3
+                    for x in range(8):
+                        vel.angular.z = 0.8
+                        vel.linear.x = 0
                         velPub.publish(vel)
-                        time.sleep(1)
+                        time.sleep(3)
 
                     # Set the flag to false
                     ballFound = False
@@ -163,63 +166,115 @@ def checkForBall(ros_data):
 
                 velPub.publish(vel)
 
-        else:
-            # The robot doesn't see the ball
-            ballFound = False
+        # else:
+        #     # The robot doesn't see the ball
+        #     ballFound = False
 
 
 ##
 # Stores the name of a location if it hasn't already been found
 # @param locationNumber The integer corresponding to a location
 def saveLocationName(locationNumber):
-        if locationNumber == 0:
-            if not "Entrance" in detectedLocations:
-                detectedLocations.append("Entrance")
-        elif locationNumber == 1:
-            if not "Closet" in detectedLocations:
-                detectedLocations.append("Closet")
-        elif locationNumber == 2:
-            if not "Living Room" in detectedLocations:
-                detectedLocations.append("Living Room")
-        elif locationNumber == 3:
-            if not "Kitchen" in detectedLocations:
-                detectedLocations.append("Kitchen")
-        elif locationNumber == 4:
-            if not "Bathroom" in detectedLocations:
-                detectedLocations.append("Bathroom")
-        elif locationNumber == 5:
-            if not "Bedroom" in detectedLocations:
-                detectedLocations.append("Bedroom") 
+    global robotPosition_x, robotPosition_y
+    global detectedLocations
+
+    if locationNumber == 0:
+        if not "Entrance" in detectedLocations:
+            detectedLocations.append("Entrance")
+
+            logfile.write("\n[%f] State machine: The robot found the Entrance.\n" %time.time())
+            logfile.flush()
+            os.fsync(logfile)
+    elif locationNumber == 1:
+        if not "Closet" in detectedLocations:
+            detectedLocations.append("Closet")
+
+            logfile.write("\n[%f] State machine: The robot found the Closet.\n" %time.time())
+            logfile.flush()
+            os.fsync(logfile)
+    elif locationNumber == 2:
+        if not "Living Room" in detectedLocations:
+            detectedLocations.append("Living Room")
+
+            logfile.write("\n[%f] State machine: The robot found the Living Room.\n" %time.time())
+            logfile.flush()
+            os.fsync(logfile)
+    elif locationNumber == 3:
+        if not "Kitchen" in detectedLocations:
+            detectedLocations.append("Kitchen")
+
+            logfile.write("\n[%f] State machine: The robot found the Kitchen.\n" %time.time())
+            logfile.flush()
+            os.fsync(logfile)
+    elif locationNumber == 4:
+        if not "Bathroom" in detectedLocations:
+            detectedLocations.append("Bathroom")
+
+            logfile.write("\n[%f] State machine: The robot found the Bathroom.\n" %time.time())
+            logfile.flush()
+            os.fsync(logfile)
+    elif locationNumber == 5:
+        if not "Bedroom" in detectedLocations:
+            detectedLocations.append("Bedroom") 
+
+            logfile.write("\n[%f] State machine: The robot found the Bedroom.\n" %time.time())
+            logfile.flush()
+            os.fsync(logfile)
 
 
 ##
 # Stores the position of a location if it hasn't already been found
 # @param locationNumber The integer corresponding to a location
 def saveLocationPosition(locationNumber):
-        if locationNumber == 0:
-            if not "Entrance" in detectedLocations:
-                rospy.set_param("entrance_x", robotPosition_x)
-                rospy.set_param("entrance_y", robotPosition_y)
-        elif locationNumber == 1:
-            if not "Closet" in detectedLocations:
-                rospy.set_param("closet_x", robotPosition_x)
-                rospy.set_param("closet_y", robotPosition_y)
-        elif locationNumber == 2:
-            if not "Living Room" in detectedLocations:
-                rospy.set_param("livingroom_x", robotPosition_x)
-                rospy.set_param("livingroom_y", robotPosition_y)
-        elif locationNumber == 3:
-            if not "Kitchen" in detectedLocations:
-                rospy.set_param("kitchen_x", robotPosition_x)
-                rospy.set_param("kitchen_y", robotPosition_y)
-        elif locationNumber == 4:
-            if not "Bathroom" in detectedLocations:
-                rospy.set_param("bathroom_x", robotPosition_x)
-                rospy.set_param("bathroom_y", robotPosition_y)
-        elif locationNumber == 5:
-            if not "Bedroom" in detectedLocations:
-                rospy.set_param("bedroom_x", robotPosition_x)
-                rospy.set_param("bedroom_y", robotPosition_y)
+    global robotPosition_x, robotPosition_y
+
+    if locationNumber == 0:
+        rospy.set_param("entrance_x", robotPosition_x)
+        rospy.set_param("entrance_y", robotPosition_y)
+
+        logfile.write("\n[%f] State machine: Stored the Entrance location [%f, %f].\n" %(time.time(), robotPosition_x, robotPosition_y))
+        logfile.flush()
+        os.fsync(logfile)
+
+    elif locationNumber == 1:
+        rospy.set_param("closet_x", robotPosition_x)
+        rospy.set_param("closet_y", robotPosition_y)
+
+        logfile.write("\n[%f] State machine: Stored the Closet location [%f, %f].\n" %(time.time(), robotPosition_x, robotPosition_y))
+        logfile.flush()
+        os.fsync(logfile)
+
+    elif locationNumber == 2:
+        rospy.set_param("livingroom_x", robotPosition_x)
+        rospy.set_param("livingroom_y", robotPosition_y)
+
+        logfile.write("\n[%f] State machine: Stored the Living Room location [%f, %f].\n" %(time.time(), robotPosition_x, robotPosition_y))
+        logfile.flush()
+        os.fsync(logfile)
+
+    elif locationNumber == 3:
+        rospy.set_param("kitchen_x", robotPosition_x)
+        rospy.set_param("kitchen_y", robotPosition_y)
+
+        logfile.write("\n[%f] State machine: Stored the Kitchen location [%f, %f].\n" %(time.time(), robotPosition_x, robotPosition_y))
+        logfile.flush()
+        os.fsync(logfile)
+
+    elif locationNumber == 4:
+        rospy.set_param("bathroom_x", robotPosition_x)
+        rospy.set_param("bathroom_y", robotPosition_y)
+
+        logfile.write("\n[%f] State machine: Stored the Bathroom location [%f, %f].\n" %(time.time(), robotPosition_x, robotPosition_y))
+        logfile.flush()
+        os.fsync(logfile)
+
+    elif locationNumber == 5:
+        rospy.set_param("bedroom_x", robotPosition_x)
+        rospy.set_param("bedroom_y", robotPosition_y)
+
+        logfile.write("\n[%f] State machine: Stored the Bedroom location [%f, %f].\n" %(time.time(), robotPosition_x, robotPosition_y))
+        logfile.flush()
+        os.fsync(logfile)
 
 
 ##
@@ -242,7 +297,7 @@ def receivedCommand(ros_data):
     global parameter
     global logfile
 
-    logfile.write("\nState machine: Received a formatted command.\n")
+    logfile.write("\n[%f] State machine: Received a formatted command.\n" %time.time())
     logfile.flush()
     os.fsync(logfile)
 
@@ -250,12 +305,13 @@ def receivedCommand(ros_data):
     if ros_data.mainCommand == "Play":
         receivedPlay = True
         receivedGoTo = False
+        parameter = ""
     elif ros_data.mainCommand == "GoTo":
         receivedGoTo = True
         receivedPlay = False
         parameter = ros_data.parameter
     else:
-        logfile.write("\nUnknown command received: error in state_machine.py.\n")
+        logfile.write("\n[%f] Unknown command received: error in state_machine.py.\n" %time.time())
         logfile.flush()
         os.fsync(logfile)
 
@@ -269,18 +325,22 @@ def sendGoalNormalState():
     global logfile
 
     # Get a random location on the plane 
-    # FIXME (check the dimension of the map)
     # x = random.randint(-6, 6)
     # y = random.randint(-8, 8)
 
-    x = -4
-    y = 7
+    x = -2
+    y = 8
 
     # Create the goal
+    mbGoal.target_pose.header.frame_id = "map"
+    mbGoal.target_pose.header.stamp = rospy.Time.now()
     mbGoal.target_pose.pose.position.x = x
     mbGoal.target_pose.pose.position.y = y
+    mbGoal.target_pose.pose.position.z = 0
+    mbGoal.target_pose.pose.orientation.z = 0.1
+    mbGoal.target_pose.pose.orientation.w = 0.1
 
-    logfile.write("\nNORMAL state: the robot is moving to position [%d, %d].\n" %(x, y))
+    logfile.write("\n[%f] NORMAL state: the robot is moving to position [%d, %d].\n" %(time.time(), x, y))
     logfile.flush()
     os.fsync(logfile)
 
@@ -288,9 +348,9 @@ def sendGoalNormalState():
     movebaseClient.send_goal(mbGoal)
 
     # Wait for the result
-    movebaseClient.wait_for_result()
+    movebaseClient.wait_for_result(rospy.Duration(120))
 
-    logfile.write("\nNORMAL state: the action server returned result %s.\n" %str(movebaseClient.get_state()))
+    logfile.write("\n[%f] NORMAL state: the action server returned with state %s.\n" %(time.time(), str(movebaseClient.get_state())))
     logfile.flush()
     os.fsync(logfile)
 
@@ -307,7 +367,7 @@ class Normal(smach.State):
 
         # Threshold
         # self.sleepThreshold = random.randint(5, 10)
-        self.sleepThreshold = 3
+        self.sleepThreshold = 5
 
     def execute(self, userdata):
         global sleepCounter
@@ -319,12 +379,12 @@ class Normal(smach.State):
         global finishedMoving, finishedGettingClose
         global logfile
 
-        logfile.write('\nState machine: Executing state NORMAL.\n')
+        logfile.write('\n[%f] State machine: Executing state NORMAL.\n' %time.time())
         logfile.flush()
         os.fsync(logfile)
 
         # Subscribe to the image topic to check if the robot sees the ball
-        imageSub = rospy.Subscriber("camera1/image_raw/compressed", CompressedImage, checkForBall, queue_size=1)
+        imageSub = rospy.Subscriber("camera1/image_raw/compressed", CompressedImage, checkForBall)
 
         # Subscribe to the command topic to receive them
         commandSub = rospy.Subscriber("sensor/formatted_command", FormattedCommand, receivedCommand, queue_size=1)
@@ -342,7 +402,7 @@ class Normal(smach.State):
 
                 receivedPlay = False
 
-                logfile.write('\nNORMAL state: The robot wants to play.\n')
+                logfile.write('\n[%f] NORMAL state: The robot wants to play.\n' %time.time())
                 logfile.flush()
                 os.fsync(logfile)
 
@@ -358,6 +418,7 @@ class Normal(smach.State):
             if ballFound:
                 finishedGettingClose.wait()
                 finishedGettingClose.clear()
+                imageSub = rospy.Subscriber("camera1/image_raw/compressed", CompressedImage, checkForBall)
 
             # Increment the counter
             sleepCounter += 1
@@ -368,7 +429,7 @@ class Normal(smach.State):
         odomSub.unregister()
 
         # Go into the SLEEP state
-        logfile.write('\nNORMAL state: The robot is sleepy.\n')
+        logfile.write('\n[%f] NORMAL state: The robot is sleepy.\n' %time.time())
         logfile.flush()
         os.fsync(logfile)
 
@@ -387,25 +448,31 @@ class Sleep(smach.State):
         global mbGoal
         global logfile
 
-        logfile.write('\nState machine: Executing state SLEEP.\n')
+        logfile.write('\n[%f] State machine: Executing state SLEEP.\n' %time.time())
         logfile.flush()
         os.fsync(logfile)
 
         # Get the home location on the plane
+        # FIXME use ros parameters
         x = -5
         y = 8
 
         # Create the goal
+        mbGoal.target_pose.header.frame_id = "map"
+        mbGoal.target_pose.header.stamp = rospy.Time.now()
         mbGoal.target_pose.pose.position.x = x
         mbGoal.target_pose.pose.position.y = y
+        mbGoal.target_pose.pose.position.z = 0
+        mbGoal.target_pose.pose.orientation.z = 0.1
+        mbGoal.target_pose.pose.orientation.w = 0.1
 
         # Send the goal
         movebaseClient.send_goal(mbGoal)
 
         # Wait until the robot has reached the destination
-        movebaseClient.wait_for_result()
+        movebaseClient.wait_for_result(rospy.Duration(120))
 
-        logfile.write("\nSLEEP state: the action server returned result %s.\n" %str(movebaseClient.get_state()))
+        logfile.write("\n[%f] SLEEP state: the action server returned with state %s.\n" %(time.time(), str(movebaseClient.get_state())))
         logfile.flush()
         os.fsync(logfile)
 
@@ -415,7 +482,7 @@ class Sleep(smach.State):
 
         # Go back to the NORMAL state
         sleepCounter = 0
-        logfile.write("\nSLEEP state: The robot woke up.\n")
+        logfile.write("\n[%f] SLEEP state: The robot woke up.\n" %time.time())
         logfile.flush()
         os.fsync(logfile)
 
@@ -431,7 +498,7 @@ class Play(smach.State):
     def execute(self, userdata):
         global logfile
 
-        logfile.write('\nState machine: Executing state PLAY.\n')
+        logfile.write('\n[%f] State machine: Executing state PLAY.\n' %time.time())
         logfile.flush()
         os.fsync(logfile)
 
@@ -515,7 +582,7 @@ class Find(smach.State):
     def execute(self, userdata):
         global logfile
 
-        logfile.write('\nState machine: Executing state FIND.\n')
+        logfile.write('\n[%f] State machine: Executing state FIND.\n' %time.time())
         logfile.flush()
         os.fsync(logfile)
 
@@ -531,11 +598,11 @@ if __name__ == "__main__":
     script_path = os.path.abspath(__file__) 
     path_list = script_path.split(os.sep)
     script_directory = path_list[0:len(path_list)-2]
-    file_path = "log/logfile.txt"
+    file_path = "log/state_machine_logfile.txt"
     path = "/".join(script_directory) + "/" + file_path
-    logfile = open(path, 'a')
+    logfile = open(path, 'w')
 
-    logfile.write("\nState machine: Trying to connect to the move_base server.\n")
+    logfile.write("\n[%f] State machine: Trying to connect to the move_base server.\n" %time.time())
     logfile.flush()
     os.fsync(logfile)
 
@@ -543,21 +610,12 @@ if __name__ == "__main__":
     movebaseClient = actionlib.SimpleActionClient("/move_base", MoveBaseAction)
     movebaseClient.wait_for_server()
 
-    logfile.write("\nState machine: Connected to the move base server.\n")
+    logfile.write("\n[%f] State machine: Connected to the move base server.\n" %time.time())
     logfile.flush()
     os.fsync(logfile)
 
     # Initialize the publishers
     velPub = rospy.Publisher("cmd_vel", Twist, queue_size=1)
-    initPosPub = rospy.Publisher("initialpose", PoseWithCovarianceStamped, queue_size=1)
-
-    # Publish the initial position
-    initialPos = PoseWithCovarianceStamped()
-    initialPos.pose.pose.position.x = -5
-    initialPos.pose.pose.position.y = 8
-    initialPos.pose.covariance = [0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.06853892326654787]
-
-    initPosPub.publish(initialPos)
 
     # Create a SMACH state machine
     sm = smach.StateMachine(outcomes=[])

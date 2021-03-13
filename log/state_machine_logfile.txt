@@ -1,0 +1,18 @@
+
+[1615654272.233111] State machine: Trying to connect to the move_base server.
+
+[1615654280.074329] State machine: Connected to the move base server.
+
+[1615654280.131269] State machine: Executing state NORMAL.
+
+[1615654280.189907] NORMAL state: the robot is moving to position [-2, 8].
+
+[1615654292.791887] State machine: The robot found the Entrance.
+
+[1615654293.030492] NORMAL state: the action server returned with state 2.
+
+[1615654349.697739] State machine: Stored the Entrance location [-0.553689, 8.143638].
+
+[1615654379.828221] NORMAL state: the robot is moving to position [-2, 8].
+
+[1615654380.094009] NORMAL state: the action server returned with state 2.

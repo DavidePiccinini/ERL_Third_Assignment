@@ -1,0 +1,14 @@
+
+[1615653033.155371] Sensor: sending a 'Play' formatted command.
+
+[1615653043.181015] Sensor: sending a 'GoTo: Entrance' formatted command.
+
+[1615653053.227873] Sensor: sending a 'GoTo: Kitchen' formatted command.
+
+[1615653063.266388] Sensor: sending a 'Play' formatted command.
+
+[1615653073.302775] Sensor: sending a 'Play' formatted command.
+
+[1615653083.363540] Sensor: sending a 'Play' formatted command.
+
+[1615653093.399626] Sensor: sending a 'GoTo: Closet' formatted command.

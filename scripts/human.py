@@ -29,7 +29,7 @@ def sendPlayCommand():
     command.data = "Play"
 
     # Print a feedback message
-    logfile.write("\nPerson: sending a '%s' command to the robot.\n" %command.data)
+    logfile.write("\n[%f] Person: sending a '%s' command to the robot.\n" %(time.time(), command.data))
     logfile.flush()
     os.fsync(logfile)
 
@@ -62,7 +62,7 @@ def sendGoToCommand():
     command.data = "GoTo: " + locations.get(result, "\nError in human.py.\n")
 
     # Print a feedback message
-    logfile.write("\nPerson: sending a '%s' command to the robot.\n" %command.data)
+    logfile.write("\n[%f] Person: sending a '%s' command to the robot.\n" %(time.time(), command.data))
     logfile.flush()
     os.fsync(logfile)
 
@@ -92,14 +92,14 @@ if __name__ == "__main__":
         # Initialize the node
         rospy.init_node('human')
 
-        # Clear the log file and open it to write
+        # Open the logfile to write on it
         script_path = os.path.abspath(__file__) 
         path_list = script_path.split(os.sep)
         script_directory = path_list[0:len(path_list)-2]
-        file_path = "log/logfile.txt"
+        file_path = "log/human_logfile.txt"
         path = "/".join(script_directory) + "/" + file_path
-        open(path, 'w').close()
-        logfile = open(path, 'a')
+        # open(path, 'w').close()
+        logfile = open(path, 'w')
 
         # Initialize the command publisher
         comPub = rospy.Publisher("command", String, queue_size=1)

@@ -1,0 +1,32 @@
+
+[1615654274.941071] Person: sending a 'GoTo: Living Room' command to the robot.
+
+[1615654284.975095] Person: sending a 'GoTo: Closet' command to the robot.
+
+[1615654295.031993] Person: sending a 'Play' command to the robot.
+
+[1615654305.076428] Person: sending a 'GoTo: Bathroom' command to the robot.
+
+[1615654315.120415] Person: sending a 'Play' command to the robot.
+
+[1615654325.165649] Person: sending a 'GoTo: Kitchen' command to the robot.
+
+[1615654335.200430] Person: sending a 'Play' command to the robot.
+
+[1615654345.246863] Person: sending a 'GoTo: Living Room' command to the robot.
+
+[1615654355.290848] Person: sending a 'Play' command to the robot.
+
+[1615654365.336431] Person: sending a 'GoTo: Living Room' command to the robot.
+
+[1615654375.373007] Person: sending a 'GoTo: Kitchen' command to the robot.
+
+[1615654385.416433] Person: sending a 'GoTo: Bedroom' command to the robot.
+
+[1615654395.518543] Person: sending a 'Play' command to the robot.
+
+[1615654405.562824] Person: sending a 'Play' command to the robot.
+
+[1615654415.616470] Person: sending a 'Play' command to the robot.
+
+[1615654425.654677] Person: sending a 'Play' command to the robot.

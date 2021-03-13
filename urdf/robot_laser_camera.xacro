@@ -151,9 +151,9 @@
 	    </material>
 	  </visual>
 	  <inertial>
-	    <mass value="1e-5" />
-	    <origin xyz="0 0 0" rpy="0 0 0"/>
-	    <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6" />
+	    <mass value="0.025"/>
+  		<origin xyz="0 0 0" rpy="0 0 0" />
+  		<inertia ixx="1.2708333e-5" ixy="0" ixz="0" iyy="1.0416667e-5" iyz="0" izz="1.2708333e-5"/>
 	  </inertial> 
   </link>
 
@@ -183,7 +183,7 @@
 
   <!-- Joints -->
   <joint name="joint_right_wheel" type="continuous">
-    <origin rpy="0 0 0" xyz="-0.025 0.075 0"/>
+    <origin rpy="0 0 0" xyz="-0.075 0.075 0"/>
     <child link="link_right_wheel"/>
     <parent link="link_chassis"/>
     <axis rpy="0 0 0" xyz="0 1 0"/>
@@ -192,7 +192,7 @@
   </joint>
   
   <joint name="joint_left_wheel" type="continuous">
-    <origin rpy="0 0 0" xyz="-0.025 -0.075 0"/>
+    <origin rpy="0 0 0" xyz="-0.075 -0.075 0"/>
     <child link="link_left_wheel"/>
     <parent link="link_chassis"/>
     <axis rpy="0 0 0" xyz="0 1 0"/>
@@ -204,19 +204,18 @@
 	  <origin xyz="0.12 0 0.0125" rpy="0 0 0"/>
 	  <parent link="link_chassis"/>
 	  <child link="hokuyo_link"/> 
-	 </joint>
+	</joint>
 
   <joint name="camera_support_joint" type="fixed">
-	  <axis xyz="0 1 0" />
-	  <origin xyz="0.06 0 0.0175" rpy="0 0 0"/>
+	  <origin xyz="0.08 0 0.0175" rpy="0 0 0"/>
 	  <parent link="link_chassis"/>
 	  <child link="camera_support_link"/> 
-	 </joint>
+	</joint>
 
-   <joint name="camera_joint" type="fixed">
+  <joint name="camera_joint" type="fixed">
 	  <origin xyz="0.02 0 0.055" rpy="0 0 0"/>
 	  <parent link="camera_support_link"/>
 	  <child link="camera_link"/> 
-	 </joint>
+	</joint>
 
 </robot>
