@@ -21,7 +21,7 @@ logfile = None
 
 
 ##
-# Publishes a simple "Play" command on the topic and then waits for some time.
+# Publishes a simple "Play" command on the topic.
 def sendPlayCommand():
     global logfile
 
@@ -36,12 +36,9 @@ def sendPlayCommand():
     # Send the command
     comPub.publish(command)
 
-    # Wait for some time
-    time.sleep(10)
-
 
 ##
-# Publishes a "GoTo: Location" command on the topic by choosing randomly the location and then waits for some time.
+# Publishes a "GoTo: Location" command on the topic by choosing randomly the location.
 def sendGoToCommand():
     global logfile 
 
@@ -69,9 +66,6 @@ def sendGoToCommand():
     # Send the command
     comPub.publish(command)
 
-    # Wait for some time
-    time.sleep(10)
-
 
 ##
 # Randomly execute one of the two "send command" functions.
@@ -85,6 +79,9 @@ def human():
             sendPlayCommand()
         else:
             sendGoToCommand()
+
+        # Wait for some time
+        time.sleep(30)
 
 
 if __name__ == "__main__":

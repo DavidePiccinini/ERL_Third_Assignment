@@ -146,15 +146,13 @@
 	    <geometry>
 		    <box size="0.05 0.05 0.06"/>
 	    </geometry>
-	    <material name="blue">
-		    <color rgba="1 0 0 1"/>
-	    </material>
+	    <material name="blue"/>
 	  </visual>
 	  <inertial>
 	    <mass value="0.025"/>
   		<origin xyz="0 0 0" rpy="0 0 0" />
   		<inertia ixx="1.2708333e-5" ixy="0" ixz="0" iyy="1.0416667e-5" iyz="0" izz="1.2708333e-5"/>
-	  </inertial> 
+	  </inertial>
   </link>
 
   <link name="camera_link">
@@ -169,9 +167,7 @@
 	      <geometry>
 		      <box size="0.025 0.025 0.025"/>
 	      </geometry>
-	      <material name="grey">
-		      <color rgba="1 0 0 1"/>
-	      </material>
+	      <material name="green"/>
 	    </visual>
 	    <inertial>
 	      <mass value="1e-5" />
@@ -183,7 +179,7 @@
 
   <!-- Joints -->
   <joint name="joint_right_wheel" type="continuous">
-    <origin rpy="0 0 0" xyz="-0.075 0.075 0"/>
+    <origin rpy="0 0 0" xyz="-0.025 0.075 0"/>
     <child link="link_right_wheel"/>
     <parent link="link_chassis"/>
     <axis rpy="0 0 0" xyz="0 1 0"/>
@@ -192,7 +188,7 @@
   </joint>
   
   <joint name="joint_left_wheel" type="continuous">
-    <origin rpy="0 0 0" xyz="-0.075 -0.075 0"/>
+    <origin rpy="0 0 0" xyz="-0.025 -0.075 0"/>
     <child link="link_left_wheel"/>
     <parent link="link_chassis"/>
     <axis rpy="0 0 0" xyz="0 1 0"/>

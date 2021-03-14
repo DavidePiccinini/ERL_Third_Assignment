@@ -44,6 +44,14 @@
   </group>
 
 
+  <!-- Parameters -->
+  <param name="human_x" value="-5"/>
+  <param name="human_y" value="8"/>
+
+  <param name="home_x" value="-5"/>
+  <param name="home_y" value="4"/>
+
+
   <!-- Spawn the human model -->
   <param name="human_description" textfile="$(find erl_third_assignment)/urdf/human.urdf" />
   <node name="urdf_spawner_human" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
@@ -65,7 +73,7 @@
 
 
   <!-- Run the node associated to the sensor -->
-  <!-- <node name="sensor_controller" pkg="erl_third_assignment" type="sensor.py" respawn="true" output="screen"/> -->
+  <node name="sensor_controller" pkg="erl_third_assignment" type="sensor.py" respawn="true" output="screen"/>
 
 
   <!-- Run the state machine -->
