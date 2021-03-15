@@ -95,7 +95,6 @@ if __name__ == "__main__":
         script_directory = path_list[0:len(path_list)-2]
         file_path = "log/human_logfile.txt"
         path = "/".join(script_directory) + "/" + file_path
-        # open(path, 'w').close()
         logfile = open(path, 'w')
 
         # Initialize the command publisher

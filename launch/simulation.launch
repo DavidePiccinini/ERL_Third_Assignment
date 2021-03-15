@@ -73,7 +73,7 @@
 
 
   <!-- Run the node associated to the sensor -->
-  <node name="sensor_controller" pkg="erl_third_assignment" type="sensor.py" respawn="true" output="screen"/>
+  <!-- <node name="sensor_controller" pkg="erl_third_assignment" type="sensor.py" respawn="true" output="screen"/> -->
 
 
   <!-- Run the state machine -->

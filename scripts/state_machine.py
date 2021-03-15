@@ -16,6 +16,7 @@ import imutils
 import math
 import threading
 import os
+import roslaunch
 import numpy as np
 from scipy.ndimage import filters
 from actionlib_msgs.msg import GoalStatus
@@ -46,8 +47,8 @@ sleepCounter = 0
 ## Command variables
 receivedPlay = False
 receivedGoTo = threading.Event()
-parameter = ""
-requestedLocation = ""
+parameter = None
+requestedLocation = None
 
 ## Flag to notify that the robot has seen the ball
 ballFound = False
@@ -55,17 +56,18 @@ ballFound = False
 ## Threading events
 finishedMoving = threading.Event()
 finishedGettingClose = threading.Event()
+stopExploring = threading.Event()
 
 ## Color masks
 blueLower = (100, 50, 50)
 blueUpper = (130, 255, 255)
-redLower = (0, 50, 50)
+redLower = (0, 225, 50)
 redUpper = (5, 255, 255)
 greenLower = (50, 50, 50)
 greenUpper = (70, 255, 255)
 yellowLower = (25, 50, 50)
 yellowUpper = (35, 255, 255)
-magentaLower = (125, 50, 50)
+magentaLower = (135, 150, 50)
 magentaUpper = (150, 255, 255)
 blackLower = (0, 0, 0)
 blackUpper = (5, 50, 50)
@@ -80,6 +82,9 @@ robotPosition_y = None
 
 ## Log file
 logfile = None
+
+## Explore-lite launch file variable
+expLite = None
 
 
 ##
@@ -104,8 +109,9 @@ def checkContours(image, maskLower, maskUpper):
 def checkForBall(ros_data):
     global ballFound
     global finishedGettingClose
-    global savedLocations
+    global savedLocations, requestedLocation
     global movebaseClient
+    global stopExploring
     global velPub
     global imageSub
     global blueLower, blueUpper, redLower, redUpper, greenLower, greenUpper, yellowLower, yellowUpper, magentaLower, magentaUpper, blackLower, blackUpper
@@ -128,8 +134,12 @@ def checkForBall(ros_data):
             # The robot has seen a ball, set the flag to true
             ballFound = True
 
-            # Cancel all move_base goals
+            # Cancel the current move_base goal
             movebaseClient.cancel_goal()
+
+            # If the robot is in the FIND state, stop the explore-lite package
+            if requestedLocation != None and not stopExploring.is_set():
+                stopExploring.set()
 
             # Save the location name if it hasn't been found yet
             saveLocationName(i)              
@@ -139,7 +149,7 @@ def checkForBall(ros_data):
             M = cv2.moments(c)
             center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
 
-            if radius > 10:
+            if radius > 5:
                 vel = Twist()
                 vel.angular.z = -0.002*(center[0]-400)
                 vel.linear.x = -0.01*(radius-150)
@@ -151,14 +161,17 @@ def checkForBall(ros_data):
                     vel.linear.x = -0.3
 
                 if (abs(vel.linear.x) <= 0.1) and (abs(vel.angular.z) <= 0.1):
-                    imageSub.unregister()
+                    # Stop the robot
+                    vel.angular.z = 0
+                    vel.linear.x = 0
+                    velPub.publish(vel)
 
                     # Save the location's position
                     saveLocationPosition(i)
 
                     # Turn the robot approximately 180 degrees 
-                    for x in range(8):
-                        vel.angular.z = 0.8
+                    for x in range(4):
+                        vel.angular.z = 0.6
                         vel.linear.x = 0
                         velPub.publish(vel)
                         time.sleep(3)
@@ -324,15 +337,24 @@ def receivedCommand(ros_data):
     logfile.flush()
     os.fsync(logfile)
 
+    locations = {
+        "Entrance": 0,
+        "Closet": 1,
+        "Living Room": 2,
+        "Kitchen": 3,
+        "Bathroom": 4,
+        "Bedroom": 5
+    }
+
     # Retrieve the command
     if ros_data.mainCommand == "Play":
         receivedPlay = True
         receivedGoTo.clear()
-        parameter = ""
+        parameter = None
     elif ros_data.mainCommand == "GoTo":
         receivedGoTo.set()
         receivedPlay = False
-        parameter = ros_data.parameter
+        parameter = locations.get(ros_data.parameter)
     else:
         logfile.write("\n[%f] Unknown command received: error in state_machine.py.\n" %time.time())
         logfile.flush()
@@ -360,7 +382,7 @@ def sendGoalNormalState():
     mbGoal.target_pose.pose.orientation.z = 0.1
     mbGoal.target_pose.pose.orientation.w = 0.1
 
-    logfile.write("\n[%f] NORMAL state: the robot is moving to position [%d, %d].\n" %(time.time(), x, y))
+    logfile.write("\n[%f] NORMAL state: The robot is moving to position [%d, %d].\n" %(time.time(), x, y))
     logfile.flush()
     os.fsync(logfile)
 
@@ -370,13 +392,12 @@ def sendGoalNormalState():
     # Wait for the result
     movebaseClient.wait_for_result(rospy.Duration(80))
 
-    logfile.write("\n[%f] NORMAL state: the action server returned with state %s.\n" %(time.time(), str(movebaseClient.get_state())))
+    logfile.write("\n[%f] NORMAL state: The action server returned with state %s.\n" %(time.time(), str(movebaseClient.get_state())))
     logfile.flush()
     os.fsync(logfile)
 
     # Set the flag
     finishedMoving.set()
-
 
 
 ##
@@ -440,7 +461,6 @@ class Normal(smach.State):
             if ballFound:
                 finishedGettingClose.wait()
                 finishedGettingClose.clear()
-                imageSub = rospy.Subscriber("camera1/image_raw/compressed", CompressedImage, checkForBall)
 
             # Increment the counter
             sleepCounter += 1
@@ -491,9 +511,9 @@ class Sleep(smach.State):
         movebaseClient.send_goal(mbGoal)
 
         # Wait until the robot has reached the destination
-        movebaseClient.wait_for_result(rospy.Duration(120))
+        movebaseClient.wait_for_result(rospy.Duration(180))
 
-        logfile.write("\n[%f] SLEEP state: the action server returned with state %s.\n" %(time.time(), str(movebaseClient.get_state())))
+        logfile.write("\n[%f] SLEEP state: The action server returned with state %s.\n" %(time.time(), str(movebaseClient.get_state())))
         logfile.flush()
         os.fsync(logfile)
 
@@ -528,13 +548,17 @@ def sendGoalPlayState(x, y):
     mbGoal.target_pose.pose.orientation.z = 0.1
     mbGoal.target_pose.pose.orientation.w = 0.1
 
+    logfile.write("\n[%f] PLAY state: The robot is moving to position [%d, %d].\n" %(time.time(), x, y))
+    logfile.flush()
+    os.fsync(logfile)
+
     # Send the goal
     movebaseClient.send_goal(mbGoal)
 
     # Wait until the robot has reached the destination
-    movebaseClient.wait_for_result(rospy.Duration(80))
+    movebaseClient.wait_for_result(rospy.Duration(180))
 
-    logfile.write("\n[%f] PLAY state: the action server returned with state %s.\n" %(time.time(), str(movebaseClient.get_state())))
+    logfile.write("\n[%f] PLAY state: The action server returned with state %s.\n" %(time.time(), str(movebaseClient.get_state())))
     logfile.flush()
     os.fsync(logfile)
 
@@ -547,7 +571,7 @@ class Play(smach.State):
 
     def execute(self, userdata):
         global logfile
-        global detectedLocations
+        global savedLocations
         global receivedGoTo
         global parameter
         global commandSub
@@ -575,38 +599,43 @@ class Play(smach.State):
             receivedGoTo.wait()
             receivedGoTo.clear()
 
-            if not parameter in detectedLocations:
-                # If the requested location hasn't been found yet, switch to the FIND state
+            if not parameter in savedLocations:
+                # If the requested location's position hasn't been saved yet, switch to the FIND state
                 commandSub.unregister()
                 requestedLocation = parameter
+
+                logfile.write("\n[%f] PLAY state: The requested location's position is currently unknown, switching to the FIND state.\n" %time.time())
+                logfile.flush()
+                os.fsync(logfile)
+
                 return 'find'
 
-            elif parameter == "Entrance":
+            elif parameter == 0:
                 # Get the entrance location
                 x = rospy.get_param("entrance_x")
                 y = rospy.get_param("entrance_y")
 
-            elif parameter == "Closet":
+            elif parameter == 1:
                 # Get the closet location
                 x = rospy.get_param("closet_x")
                 y = rospy.get_param("closet_y")
 
-            elif parameter == "Living Room":
+            elif parameter == 2:
                 # Get the living room location
                 x = rospy.get_param("livingroom_x")
                 y = rospy.get_param("livingroom_y")
 
-            elif parameter == "Kitchen":
+            elif parameter == 3:
                 # Get the kitchen location
                 x = rospy.get_param("kitchen_x")
                 y = rospy.get_param("kitchen_y")
 
-            elif parameter == "Bathroom":
+            elif parameter == 4:
                 # Get the bathroom location
                 x = rospy.get_param("bathroom_x")
                 y = rospy.get_param("bathroom_y")
 
-            elif parameter == "Bedroom":
+            elif parameter == 5:
                 # Get the bedroom location
                 x = rospy.get_param("bedroom_x")
                 y = rospy.get_param("bedroom_y")
@@ -618,7 +647,7 @@ class Play(smach.State):
         return 'stopplaying'
         
 
-## TODO
+## FIXME the robot doesn't track the ball correctly
 # Define Find state.
 class Find(smach.State):
     def __init__(self):
@@ -626,15 +655,77 @@ class Find(smach.State):
 
     def execute(self, userdata):
         global logfile
+        global imageSub, odomSub
+        global expLite
+        global movebaseClient
+        global finishedGettingClose
+        global stopExploring
+        global savedLocations, requestedLocation
 
         logfile.write('\n[%f] State machine: Executing state FIND.\n' %time.time())
         logfile.flush()
         os.fsync(logfile)
 
+        # Subscribe to the image topic to check if the robot sees the ball
+        imageSub = rospy.Subscriber("camera1/image_raw/compressed", CompressedImage, checkForBall)
+
+        # Subscribe to the odometry topic to update the current robot position
+        odomSub = rospy.Subscriber("odom", Odometry, updateRobotPosition)
+
+        # Get the starting time of the FIND state
+        startingTime = time.time()
+
+        # Stay in the FIND state for some time
+        while (time.time() - startingTime) <= 180:
+            # Start the explore-lite package
+            expLite.start()
+            logfile.write('\n[%f] FIND state: Started the explore-lite package.\n' %time.time())
+            logfile.flush()
+            os.fsync(logfile)
+
+            # Wait for the flag to stop the explore-lite package
+            stopExploring.wait()
+            expLite.shutdown()
+            logfile.write('\n[%f] FIND state: Stopped the explore-lite package.\n' %time.time())
+            logfile.flush()
+            os.fsync(logfile)
+
+            time.sleep(10)
+
+            movebaseClient.cancel_goal()
+
+            # Wait for the robot to find a colored ball and get close to it
+            finishedGettingClose.wait()
+            finishedGettingClose.clear()
+
+            stopExploring.clear()
+
+            # If the colored ball that has been found corresponds to the requested location, go back to the PLAY state
+            if requestedLocation in savedLocations:
+                # Unsubscribe to the topics
+                imageSub.unregister()
+                odomSub.unregister()
+
+                requestedLocation = None
+
+                logfile.write('\n[%f] FIND state: The robot found the requested location and is going back to the PLAY state.\n' %time.time())
+                logfile.flush()
+                os.fsync(logfile)
+                
+                return 'stopsearching'
+
+        # Unsubscribe to the topics
+        imageSub.unregister()
+        odomSub.unregister()
+
+        requestedLocation = None
+
+        logfile.write('\n[%f] FIND state: The robot still has not found the requested location, so it is going back to the PLAY state.\n' %time.time())
+        logfile.flush()
+        os.fsync(logfile)
         return 'stopsearching'
 
 
-##
 # State machine initialization
 if __name__ == "__main__":
     rospy.init_node('robot_behaviour', anonymous=True)
@@ -647,7 +738,7 @@ if __name__ == "__main__":
     path = "/".join(script_directory) + "/" + file_path
     logfile = open(path, 'w')
 
-    logfile.write("\n[%f] State machine: Trying to connect to the move_base server.\n" %time.time())
+    logfile.write("[%f] State machine: Trying to connect to the move_base server.\n" %time.time())
     logfile.flush()
     os.fsync(logfile)
 
@@ -661,6 +752,13 @@ if __name__ == "__main__":
 
     # Initialize the publishers
     velPub = rospy.Publisher("cmd_vel", Twist, queue_size=1)
+
+    # Refer to the explore-lite package
+    uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
+    roslaunch.configure_logging(uuid)
+    launch_path = "launch/explore.launch"
+    path = "/".join(script_directory) + "/" + launch_path
+    expLite = roslaunch.parent.ROSLaunchParent(uuid, [path])
 
     # Create a SMACH state machine
     sm = smach.StateMachine(outcomes=[])
