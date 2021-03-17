@@ -4,7 +4,6 @@
 # Defines the different robot behaviours and the transitions between them.
 # Available states are NORMAL, SLEEP, PLAY and FIND.
 
-import roslib
 import rospy
 import smach
 import smach_ros
@@ -13,46 +12,53 @@ import random
 import actionlib
 import cv2
 import imutils
-import math
 import threading
 import os
-import roslaunch
 import numpy as np
 from scipy.ndimage import filters
-from actionlib_msgs.msg import GoalStatus
-from geometry_msgs.msg import PoseStamped, Twist, PoseWithCovarianceStamped
-from std_msgs.msg import String, Float64
+from geometry_msgs.msg import Twist
 from sensor_msgs.msg import CompressedImage
 from nav_msgs.msg import Odometry
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from erl_third_assignment.msg import FormattedCommand
 
+
 ## Action client
 movebaseClient = None
 
-## Publishers
+## Publisher
 velPub = None
 
 ## Subscriber
 imageSub = None
+## Subscriber
 odomSub = None
+## Subscriber
 commandSub = None
 
 ## Goal pose
 mbGoal = MoveBaseGoal()
 
-## Command variables
+## Counter 
+sleepCounter = 0
+
+## Command variable
 receivedPlay = False
+## Command variable
 parameter = None
+## Command variable
 requestedLocation = None
 
 ## Flag to notify that the robot has seen the ball
 ballFound = False
 
-## Threading events
+## Threading event
 finishedMoving = threading.Event()
+## Threading event
 finishedGettingClose = threading.Event()
+## Threading event
 stopExploring = threading.Event()
+## Threading event
 receivedGoTo = threading.Event()
 
 # Color masks
@@ -74,8 +80,9 @@ detectedLocations = []
 ## Saved locations list
 savedLocations = []
 
-## Current robot position
+## Current robot's x position
 robotPosition_x = None
+## Current robot's y position
 robotPosition_y = None
 
 ## Log file
@@ -84,7 +91,7 @@ logfile = None
 
 ##
 # Computes the contours of colored objects eventually present in the image.
-# @param image The preprocessed image.
+# @param image The preprocessed image in HSV format.
 # @param maskLower The lower bound mask of the color of interest.
 # @param maskUpper The upper bound mask of the color of interest.
 def checkContours(image, maskLower, maskUpper):
@@ -128,7 +135,7 @@ def checkForBall(ros_data):
             # The robot has seen a ball, set the flag to true
             ballFound = True
 
-            # Save the location name if it hasn't been found yet
+            # Log the location name if it hasn't been found yet
             foundLocation(i)              
 
             c = max(cntsList[i], key=cv2.contourArea)
@@ -144,6 +151,7 @@ def checkForBall(ros_data):
                 if requestedLocation != None and not stopExploring.is_set():
                     stopExploring.set()
 
+                # Move the robot towards the colored ball
                 vel = Twist()
                 vel.angular.z = -0.002*(center[0]-400)
                 vel.linear.x = -0.01*(radius-150)
@@ -177,7 +185,7 @@ def checkForBall(ros_data):
 
 
 ##
-# Writes on the logfile that a previously undetected location has been found
+# Writes on the logfile that a previously undetected location has been found.
 # @param locationNumber The integer corresponding to a location.
 def foundLocation(locationNumber):
     global robotPosition_x, robotPosition_y
@@ -237,8 +245,8 @@ def saveLocationPosition(locationNumber):
     global savedLocations
 
     if locationNumber == 0:
-        rospy.set_param("entrance_x", str(robotPosition_x))
-        rospy.set_param("entrance_y", str(robotPosition_y))
+        rospy.set_param("entrance_x", robotPosition_x)
+        rospy.set_param("entrance_y", robotPosition_y)
 
         # The robot must not check this location anymore
         savedLocations.append(0)
@@ -248,8 +256,8 @@ def saveLocationPosition(locationNumber):
         os.fsync(logfile)
 
     elif locationNumber == 1:
-        rospy.set_param("closet_x", str(robotPosition_x))
-        rospy.set_param("closet_y", str(robotPosition_y))
+        rospy.set_param("closet_x", robotPosition_x)
+        rospy.set_param("closet_y", robotPosition_y)
 
         # The robot must not check this location anymore
         savedLocations.append(1)
@@ -259,8 +267,8 @@ def saveLocationPosition(locationNumber):
         os.fsync(logfile)
 
     elif locationNumber == 2:
-        rospy.set_param("livingroom_x", str(robotPosition_x))
-        rospy.set_param("livingroom_y", str(robotPosition_y))
+        rospy.set_param("livingroom_x", robotPosition_x)
+        rospy.set_param("livingroom_y", robotPosition_y)
 
         # The robot must not check this location anymore
         savedLocations.append(2)
@@ -270,8 +278,8 @@ def saveLocationPosition(locationNumber):
         os.fsync(logfile)
 
     elif locationNumber == 3:
-        rospy.set_param("kitchen_x", str(robotPosition_x))
-        rospy.set_param("kitchen_y", str(robotPosition_y))
+        rospy.set_param("kitchen_x", robotPosition_x)
+        rospy.set_param("kitchen_y", robotPosition_y)
 
         # The robot must not check this location anymore
         savedLocations.append(3)
@@ -281,8 +289,8 @@ def saveLocationPosition(locationNumber):
         os.fsync(logfile)
 
     elif locationNumber == 4:
-        rospy.set_param("bathroom_x", str(robotPosition_x))
-        rospy.set_param("bathroom_y", str(robotPosition_y))
+        rospy.set_param("bathroom_x", robotPosition_x)
+        rospy.set_param("bathroom_y", robotPosition_y)
 
         # The robot must not check this location anymore
         savedLocations.append(4)
@@ -292,8 +300,8 @@ def saveLocationPosition(locationNumber):
         os.fsync(logfile)
 
     elif locationNumber == 5:
-        rospy.set_param("bedroom_x", str(robotPosition_x))
-        rospy.set_param("bedroom_y", str(robotPosition_y))
+        rospy.set_param("bedroom_x", robotPosition_x)
+        rospy.set_param("bedroom_y", robotPosition_y)
 
         # The robot must not check this location anymore
         savedLocations.append(5)
@@ -315,7 +323,7 @@ def updateRobotPosition(ros_data):
 
 
 ##
-# Notifies that the state machine received a formatted command.
+# Notifies that the state machine received a formatted command by raising the correct flags.
 # @param ros_data The received formatted command.
 def receivedCommand(ros_data):
     global receivedPlay, receivedGoTo
@@ -351,14 +359,14 @@ def receivedCommand(ros_data):
 
 
 ##
-# Send a random position goal to move_base for the NORMAL state and wait for its result.
+# Sends a random position goal to move_base for the NORMAL state and wait for its result.
 def sendGoalNormalState():
     global movebaseClient
     global mbGoal
     global finishedMoving
     global logfile
 
-    # Get a random location on the plane 
+    # Get a random location on the plane (may be out of the environment bounds)
     x = random.randint(-6, 6)
     y = random.randint(-8, 8)
 
@@ -396,11 +404,11 @@ class Normal(smach.State):
         smach.State.__init__(self, outcomes=['sleep','play'])
 
         # Threshold
-        # self.sleepThreshold = random.randint(5, 10)
-        self.sleepThreshold = 5
+        self.sleepThreshold = 3
 
     def execute(self, userdata):
         global ballFound
+        global sleepCounter
         global movebaseClient
         global imageSub, commandSub, odomSub
         global mbGoal
@@ -420,9 +428,6 @@ class Normal(smach.State):
 
         # Subscribe to the odometry topic
         odomSub = rospy.Subscriber("odom", Odometry, updateRobotPosition)
-
-        # Counter
-        sleepCounter = 0
 
         while sleepCounter < self.sleepThreshold:
             # If the user told a "Play" command, switch to the PLAY state
@@ -476,6 +481,7 @@ class Sleep(smach.State):
         smach.State.__init__(self, outcomes=['wakeup'])
 
     def execute(self, userdata):
+        global sleepCounter
         global movebaseClient
         global mbGoal
         global logfile
@@ -514,6 +520,9 @@ class Sleep(smach.State):
         # Sleep for some time
         #time.sleep(random.randint(10, 15))
         time.sleep(10)
+
+        # Reset the sleep counter back to 0
+        sleepCounter = 0
 
         # Go back to the NORMAL state
         logfile.write("\n[%f] SLEEP state: The robot woke up.\n" %time.time())
@@ -564,6 +573,7 @@ class Play(smach.State):
 
     def execute(self, userdata):
         global logfile
+        global sleepCounter
         global savedLocations
         global receivedGoTo
         global parameter
@@ -663,6 +673,9 @@ class Play(smach.State):
 
             sendGoalPlayState(x, y)
 
+            # Increment the counter
+            sleepCounter += 1
+
         # After a while, go back to the NORMAL state
         commandSub.unregister()
 
@@ -674,7 +687,7 @@ class Play(smach.State):
 def startExploreLite():
     global logfile
 
-    logfile.write('\n[%f] FIND state: Started the explore-lite package.\n' %time.time())
+    logfile.write('\n[%f] FIND state: Starting the explore-lite package.\n' %time.time())
     logfile.flush()
     os.fsync(logfile)
 
@@ -686,7 +699,7 @@ def startExploreLite():
 def stopExploreLite():
     global logfile
 
-    logfile.write('\n[%f] FIND state: Stopped the explore-lite package.\n' %time.time())
+    logfile.write('\n[%f] FIND state: Stopping the explore-lite package.\n' %time.time())
     logfile.flush()
     os.fsync(logfile)
 
