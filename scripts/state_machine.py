@@ -75,8 +75,6 @@ magentaUpper = (150, 255, 255)
 blackLower = (0, 0, 0)
 blackUpper = (5, 50, 50)
 
-## Detected locations list
-detectedLocations = []
 ## Saved locations list
 savedLocations = []
 
@@ -133,10 +131,7 @@ def checkForBall(ros_data):
     for i in locationsToCheck:
         if len(cntsList[i]) > 0:
             # The robot has seen a ball, set the flag to true
-            ballFound = True
-
-            # Log the location name if it hasn't been found yet
-            foundLocation(i)              
+            ballFound = True        
 
             c = max(cntsList[i], key=cv2.contourArea)
             ((x, y), radius) = cv2.minEnclosingCircle(c)
@@ -182,59 +177,6 @@ def checkForBall(ros_data):
                 velPub.publish(vel)
             
             return
-
-
-##
-# Writes on the logfile that a previously undetected location has been found.
-# @param locationNumber The integer corresponding to a location.
-def foundLocation(locationNumber):
-    global robotPosition_x, robotPosition_y
-    global detectedLocations
-
-    if locationNumber in detectedLocations:
-        return
-
-    elif locationNumber == 0:
-        detectedLocations.append(0)
-
-        logfile.write("\n[%f] State machine: The robot found the Entrance.\n" %time.time())
-        logfile.flush()
-        os.fsync(logfile)
-
-    elif locationNumber == 1:
-        detectedLocations.append(1)
-
-        logfile.write("\n[%f] State machine: The robot found the Closet.\n" %time.time())
-        logfile.flush()
-        os.fsync(logfile)
-
-    elif locationNumber == 2:
-        detectedLocations.append(2)
-
-        logfile.write("\n[%f] State machine: The robot found the Living Room.\n" %time.time())
-        logfile.flush()
-        os.fsync(logfile)
-
-    elif locationNumber == 3:
-        detectedLocations.append(3)
-
-        logfile.write("\n[%f] State machine: The robot found the Kitchen.\n" %time.time())
-        logfile.flush()
-        os.fsync(logfile)
-
-    elif locationNumber == 4:
-        detectedLocations.append(4)
-
-        logfile.write("\n[%f] State machine: The robot found the Bathroom.\n" %time.time())
-        logfile.flush()
-        os.fsync(logfile)
-
-    elif locationNumber == 5:
-        detectedLocations.append(5) 
-
-        logfile.write("\n[%f] State machine: The robot found the Bedroom.\n" %time.time())
-        logfile.flush()
-        os.fsync(logfile)
 
 
 ##
@@ -782,7 +724,10 @@ class Find(smach.State):
 
 
 # State machine initialization
-if __name__ == "__main__":
+def main():
+    global logfile
+    global movebaseClient
+    global velPub
     rospy.init_node('robot_behaviour', anonymous=True)
 
     # Open the log file to write on it
@@ -838,3 +783,6 @@ if __name__ == "__main__":
     # Wait for ctrl-c to stop the application
     rospy.spin()
     sis.stop()
+
+if __name__ == "__main__":
+    main()
